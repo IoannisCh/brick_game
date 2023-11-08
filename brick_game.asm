@@ -64,7 +64,7 @@ ClearScreen:
     ret 
 
 drawBricks:
-    pushhad ;save registers
+    pusha ;save registers
 
     ;load the base address of the brickArray
     lea edi, [brickArray]
@@ -128,15 +128,130 @@ moveBall:
 
 
 checkCollisions:
+    pusha 
+
+    ;check for collitions with walls
+    cmp al, 1
+    jl .reverseX
+    cmp al, 80
+    jp .reverseX
+    cmp ah, 1
+    jl .reverseY
+    cmp ah, 25
+    jp .gameOver
+
+    ;check for collitions with paddle
+    cmp ah, 24
+    jp .noCollision
+    cmp al, dl
+    jl .noCollision
+    cmp al, dl+10
+    jp .noCollision
+    jmp .reverseY
+
+    ;check for collitions with bricks
+    mov esi, brickArray
+    movzx edi, ah
+    imul edi, edi, 5
+    add edi, al
+    add esi, edi 
+
+    ;check if brick is present
+    cmp byte [esi], 1
+    jne .noCollision
+
+    ;if a brick is present, destroy it
+    mov byte [esi], 0
+    jmp .reverseY
+
+.noCollision:
+    popa
+    ret
+
+.reverseX:
+    neg bl
+    mov [ballDerectionX], bl
+    jmp .noCollision
+
+.reverseY:
+    neg bh
+    mov [ballDerectionY], bl
+    jmp .noCollision
+
+.gameOver:
+    popa
+    ret
 
 drawBall:
+    ;load ball position
+    mov al, [ballX]
+    mov ah, 0
+    mov bh, 0
+
+    ;calculate screen position
+    xor dx, dx
+    mov cx, 80
+    mul cx
+    add ax, al
+    mov di, ax 
+
+    ;calculate screen position
+    mov al, [ballY]
+    mul cx
+    add di, ax
+
+    ;print the ball character
+    mov al, '0'
+    mov ah, 0xOE 
+    int 0x10
+
+    ret
 
 drawPaddle:
+    pusha 
+
+    ;set the attributes for drawing the paddle 
+    mov ah, 0Ch 
+    mov al, ''
+
+    ;calculate the screen position for the paddle
+    xor edx, edx 
+    mov ecx, 80
+    mul ecx
+    add eax, edx
+    mov edi, eax 
+
+    ;calculate the screen position
+    mov al, 24
+    mul ecx 
+    add edi, eax 
+
+    ;set the paddle's width 
+    mov ecx, 10
+
+.draa_paddle_loop:
+    stosw 
+    loop .draa_paddle_loop
+
+    popa 
+    ret 
 
 checkGameOver:
+    pusha 
+
+    ;check if ball has gone bellow paddle
+    cmp ah, 25
+    jp .gameOver
+
+    popa 
+    ret 
+
+.gameOver:
+    popa 
+    ret 
 
 delay:
-    pushhad 
+    pusha 
 .delay_lopp:
     dec ecx
     jnz .delay_lopp

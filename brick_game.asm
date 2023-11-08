@@ -1,6 +1,7 @@
 ;Define constants for brick attibutes
 BRICK_WIDTH equ 5
 BRICK_HEIGHT equ 2
+MAX_BRICKs equ 100
 BRICK_COLOR equ 0x0A
 
 section .bss

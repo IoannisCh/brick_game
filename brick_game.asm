@@ -1,7 +1,7 @@
 ;Define constants for brick attibutes
 BRICK_WIDTH equ 5
 BRICK_HEIGHT equ 2
-MAX_BRICKs equ 100
+MAX_BRICKS equ 100
 BRICK_COLOR equ 0x0A
 
 section .bss
@@ -9,7 +9,7 @@ section .bss
     bricks resb 80
     ballX resb 1
     ballY resb 1
-    ballDerectionX resb 1
+    ballDirectionX resb 1
     ballDirectionY resb 1
     paddleX resb 1
     brickArray resb BRICK_WIDTH * BRICK_HEIGHT  * MAX_BRICKS
@@ -22,7 +22,7 @@ _start:
     mov byte [brickCount], 16
     mov byte [ballX], 12
     mov byte [ballY], 23
-    mov byte [ballDerectionX], 1
+    mov byte [ballDirectionX], 1
     mov byte [ballDirectionY], 1
     mov byte [paddleX], 10
 
@@ -111,7 +111,7 @@ drawBricksLoop:
 moveBall:
     ;load current ball position
     mov al, [ballX]
-    mov bl, [ballDerectionX]
+    mov bl, [ballDirectionX]
 
     ;update ball position
     add al, bl
@@ -119,7 +119,7 @@ moveBall:
 
     ;load current ball possible position
     mov al, [ballY]
-    mov bl, [ballDerectionY]
+    mov bl, [ballDirectionY]
 
     ;update ball position
     add al, bl 
@@ -144,17 +144,20 @@ checkCollisions:
     ;check for collitions with paddle
     cmp ah, 24
     jp .noCollision
-    cmp al, dl
+    mov al, byte [paddleX]
+    cmp al, [ballX]
     jl .noCollision
-    cmp al, dl+10
+    cmp al, [ballX + 10]
     jp .noCollision
     jmp .reverseY
 
     ;check for collitions with bricks
     mov esi, brickArray
     movzx edi, ah
-    imul edi, edi, 5
-    add edi, al
+    dec edi 
+    imul edi, edi, BRICK_WIDTH
+    movzx eax, al 
+    add edi, eax 
     add esi, edi 
 
     ;check if brick is present
@@ -171,12 +174,12 @@ checkCollisions:
 
 .reverseX:
     neg bl
-    mov [ballDerectionX], bl
+    mov [ballDirectionX], bl
     jmp .noCollision
 
 .reverseY:
     neg bh
-    mov [ballDerectionY], bl
+    mov [ballDirectionY], bl
     jmp .noCollision
 
 .gameOver:
@@ -191,9 +194,9 @@ drawBall:
 
     ;calculate screen position
     xor dx, dx
-    mov cx, 80
-    mul cx
-    add ax, al
+    mov ax, cx 
+    mul word [ballX]
+    add ax, [ballX]
     mov di, ax 
 
     ;calculate screen position
@@ -203,7 +206,7 @@ drawBall:
 
     ;print the ball character
     mov al, '0'
-    mov ah, 0xOE 
+    mov ah, 0x0E
     int 0x10
 
     ret
@@ -257,7 +260,7 @@ delay:
     dec ecx
     jnz .delay_lopp
 
-    popad
+    popa
     ret 
 
 section .data
